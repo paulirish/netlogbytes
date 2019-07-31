@@ -5,7 +5,7 @@ var babar = require('./lib/babar');
 
 console.log('\n\n\n\n');
 
-const trace = require('./trace_Mon_Jul_29_2019_5.40.30_PM.json');
+const trace = require('./trace_androidenterprise.json');
 
 const netlogEvents = trace.traceEvents
   .filter(evt => evt.cat === 'netlog')
@@ -20,6 +20,8 @@ const urlRequestsEvts = netlogEvents.filter(
   e => e.name === 'URL_REQUEST' || e.name === 'REQUEST_ALIVE'
 );
 
+
+
 // const events = urlRequestsEvts;
 // console.log('events found: ', events.length);
 // console.log(events[events.length - 4]);
@@ -31,6 +33,8 @@ const normalizeTime = ts => (ts - timeBaseline) / 1000;
 
 const bytesPts = bytesReceivedEvts.map(evt => [normalizeTime(evt.ts), evt.args.params.byte_count]);
 
+
+// requests
 let requestCount = 0;
 const requestsPts = urlRequestsEvts.map(evt => {
   if (evt.ph === 'b') requestCount++;
@@ -40,36 +44,50 @@ const requestsPts = urlRequestsEvts.map(evt => {
   return [normalizeTime(evt.ts), requestCount];
 });
 
-// plot bytes
-          // var chart = new Chart({
-          //   width: process.stdout.columns - 10,
-          //   height: 25,
-          //   directon: 'y',
-          //   xlabel: 'time (ms)',
-          //   ylabel: 'bytes',
-          //   // xmax: 3,
-          // });
+const endTime = [...bytesPts, ...requestsPts].reduce((max, val) => max = Math.max(max, val[0]), 0);
 
-          // const bytesData = bytesPts.map(arr => arr[1]);
-          // console.log({bytesData});
-          // // chart.bucketize(bytesData);
-          // // chart.draw();
+  // `ResourceReceivedData` is isntrumented in blink and up there the data is received in 65K chunks... very different from what netstack is reporting
+  // so its not very useful.. the netlog data is far more precise.
+
+//   // {"pid":82724,"tid":775,"ts":2501412236447,"ph":"I","cat":"devtools.timeline","name":"ResourceReceivedData","s":"t","tts":22381096,"args":{"data":{"requestId":"0CA79BD4942F7524FC5E1DACB0B2D86A","frame":"0EC9F7CAE4ACB0ADE0F324AAB406150B","encodedDataLength":65536.0}}},
+// const receivedDataEvts = trace.traceEvents.filter(e => e.name === 'ResourceReceivedData');
+// const cdtBytesPts = receivedDataEvts.map(evt => [normalizeTime(evt.ts), evt.args.data.encodedDataLength]);
+
+// console.log(
+//   babar(cdtBytesPts, {
+//     caption: 'CDT Bytes Received',
+//     bucketAgg: 'sum',
+//     width: process.stdout.columns - 10,
+//     height: 25,
+//   })
+//   );
+
+
+
+console.log({endTime});
+
+const opts = {
+  width: process.stdout.columns - 10,
+  height: 25,
+  minX: 0,
+  maxX: 1800,
+};
 
 console.log(
   babar(bytesPts, {
     color: 'green',
     caption: 'Bytes Received',
-    width: process.stdout.columns - 10,
-    height: 25,
+    bucketAgg: 'sum',
+    ...opts
   })
 );
 
-// plot requests
+  // plot requests
 console.log(
-  babar(requestsPts, {
-    color: 'green',
+    babar(requestsPts, {
+    color: 'cyan',
     caption: 'Requests',
-    width: process.stdout.columns - 10,
-    height: 25,
+    bucketAgg: 'avg',
+    ...opts
   })
 );
