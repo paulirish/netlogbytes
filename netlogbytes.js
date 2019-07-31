@@ -5,7 +5,7 @@ var babar = require('./lib/babar');
 
 console.log('\n\n\n\n');
 
-const trace = require('./trace_androidenterprise.json');
+const trace = require('./trace_andent.json');
 
 const netlogEvents = trace.traceEvents
   .filter(evt => evt.cat === 'netlog')
@@ -31,7 +31,7 @@ const urlRequestsEvts = netlogEvents.filter(
 const timeBaseline = urlRequestsEvts[0].ts;
 const normalizeTime = ts => (ts - timeBaseline) / 1000;
 
-const bytesPts = bytesReceivedEvts.map(evt => [normalizeTime(evt.ts), evt.args.params.byte_count]);
+const kbytesPts = bytesReceivedEvts.map(evt => [normalizeTime(evt.ts), evt.args.params.byte_count / 1024]);
 
 
 // requests
@@ -44,7 +44,7 @@ const requestsPts = urlRequestsEvts.map(evt => {
   return [normalizeTime(evt.ts), requestCount];
 });
 
-const endTime = [...bytesPts, ...requestsPts].reduce((max, val) => max = Math.max(max, val[0]), 0);
+const endTime = [...kbytesPts, ...requestsPts].reduce((max, val) => max = Math.max(max, val[0]), 0);
 
   // `ResourceReceivedData` is isntrumented in blink and up there the data is received in 65K chunks... very different from what netstack is reporting
   // so its not very useful.. the netlog data is far more precise.
@@ -62,21 +62,17 @@ const endTime = [...bytesPts, ...requestsPts].reduce((max, val) => max = Math.ma
 //   })
 //   );
 
-
-
-console.log({endTime});
-
 const opts = {
-  width: process.stdout.columns - 10,
+  width: process.stdout.columns,
   height: 25,
   minX: 0,
-  maxX: 1800,
+  maxX: Math.ceil(endTime / 100) * 100,
 };
 
 console.log(
-  babar(bytesPts, {
+  babar(kbytesPts, {
     color: 'green',
-    caption: 'Bytes Received',
+    caption: 'KBytes Received',
     bucketAgg: 'sum',
     ...opts
   })
