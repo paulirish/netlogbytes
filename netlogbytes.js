@@ -1,6 +1,6 @@
 'use strict';
 
-var babar = require('babar');
+var babar = require('./lib/babar');
 // var Chart = require('cli-chart');
 
 console.log('\n\n\n\n');
