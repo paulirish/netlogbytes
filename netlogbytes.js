@@ -62,6 +62,9 @@ const endTime = [...kbytesPts, ...requestsPts].reduce((max, val) => max = Math.m
 //   })
 //   );
 
+const width = process.stdout.columns;
+if (width === 0) throw new Error('ZERO COLUMNS WIDTH  WTF');
+
 const opts = {
   width: process.stdout.columns,
   height: 25,
