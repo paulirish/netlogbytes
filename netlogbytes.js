@@ -1,15 +1,28 @@
 'use strict';
 
+const fs = require('fs');
 var babar = require('./lib/babar');
 // var Chart = require('cli-chart');
 
 console.log('\n\n\n\n');
 
-const trace = require('./trace_andent.json');
+const arg = process.argv.slice(2)[0];
+let traceEvents;
 
-const netlogEvents = trace.traceEvents
+if (!arg) {
+  const trace = require('./trace_andent.json');
+  traceEvents = trace.traceEvents;
+} else {
+  if (!fs.existsSync(arg)) throw new Error(`file (${arg}) not found`);
+  const trace = require(arg);
+  traceEvents = trace.traceEvents || trace;
+}
+
+const netlogEvents = traceEvents
   .filter(evt => evt.cat === 'netlog')
   .sort((a, b) => a.ts - b.ts);
+
+if (!netlogEvents.length) throw new Error ('no netlog events found in trace');
 
 // https://cs.chromium.org/chromium/src/third_party/catapult/netlog_viewer/netlog_viewer/timeline_view.js?l=209-212&rcl=88aae3b05111daa5754f6c098e071d7bf330beb4
 const bytesReceivedEvts = netlogEvents.filter(
